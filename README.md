@@ -1,7 +1,7 @@
 # Flatland-MARL
-This is a multi-agent reinforcement learning solution to [Flatland3 challenge](https://www.aicrowd.com/challenges/flatland-3). The solution itself is elaborated on in our paper. 
+Multi-agent reinforcement learning solution to [Flatland3 challenge](https://www.aicrowd.com/challenges/flatland-3).
 
-> Jiang, Yuhao, Kunjie Zhang, Qimai Li, Jiaxin Chen, and Xiaolong Zhu. "[Multi-Agent Path Finding via Tree LSTM](https://arxiv.org/abs/2210.12933)." arXiv preprint arXiv:2210.12933 (2022).
+Also see the paper https://arxiv.org/abs/2210.12933.
 
 # Install Dependencies
 
@@ -11,14 +11,15 @@ $ git clone http://gitlab.parametrix.cn/parametrix/challenge/flatland-marl.git
 $ cd flatland-marl
 ```
 
-The code is tested with Python 3.7 and is expected to also work with higher versions of Python. If you are using conda, you can create a new environment with the following command (optional) :
+Needs Python >=3.7.
+If you are using conda, you can create a new environment with the following command (optional) :
 ```shell
 $ conda create -n flatland-marl python=3.7
 $ conda activate flatland-marl 
 ```
 
 ### Install flatland
-We found a bug in flatland environment that may lead to performance drop for RL solutions, so we cloned `flatland-rl-3.0.15` and fixed the bug. The bug-free one is provided in folder `flatland-rl/`. Please install this version of flatland.
+There's a bug in the flatland environment that may lead to performance drop for RL solutions, so we cloned `flatland-rl-3.0.15` and fixed the bug. The bug-free one is provided in folder `flatland-rl/`. Please install this version of flatland.
 ```shell
 $ cd flatland-rl
 $ pip install .
@@ -46,11 +47,10 @@ $ sudo apt-get install freeglut3-dev
 ```
 
 
-
 # Usage
 
 ## Quick demo
-Run our solution in random environments:
+Run the solution in random environments:
 ```shell
 $ cd solution/
 $ python demo.py
@@ -60,51 +60,6 @@ In a terminal without GUI, you may disable real-time rendering and save the repl
 ```shell
 $ python demo.py --no-render --save-video replay.mp4
 ```
-
-## Test as Flatland3 challenge round 2
-
-#### Generate test cases
-We provide a script to generate test cases with the same configuration as [Flatland3 challenge round 2](https://flatland.aicrowd.com/challenges/flatland3/envconfig.html). The generation may take several minutes.
-```shell
-$ cd solution/
-$ python debug-environments/generate_test_cases.py
-```
-
-#### Test in a specific case
-```shell
-$ python demo.py --env debug-environments/Test_3/Level_0.pkl
-```
-
-## Run the whole Flatland3 challenge round 2
-
-#### Install redis
-The Flatland3 challenge is evaluated in Client/Server architecture, which relies on redis. Please go to https://redis.io/docs/getting-started/ and follow the instructions to install redis.
-
-#### Install ffmpeg
-We relies on ffmpeg to generate replay videos.
-```shell
-$ sudo apt-get install ffmpeg
-```
-
-#### Start flatland-evaluator
-First, start redis-sever.
-```shell
-$ sudo service redis-server start
-```
-
-Then start the flatland-evaluator server.
-```shell
-$ redis-cli flushall
-$ FLATLAND_OVERALL_TIMEOUT=999999 flatland-evaluator --tests ./debug-environments/ --shuffle False --disable_timeouts true
-```
-
-Open another terminal, and run our solution.
-```shell
-$ cd solution
-$ python remote_test.py --save-videos
-```
-Replays are saved in `solution/replay/`.
-
 
 <!-- 
 ## Our results
