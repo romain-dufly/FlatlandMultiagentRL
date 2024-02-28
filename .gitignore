@@ -162,5 +162,4 @@ test*
 *.pkl
 
 # code test
-*.ipynb
 *.rdb
