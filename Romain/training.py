@@ -160,10 +160,10 @@ def train_agent(env, policy, train_params, obs_params):
 
         # Print logs
         if episode_idx % checkpoint_interval == 0:
-            torch.save(policy.qnetwork_local, 'checkpoints/' + "0" + '-' + str(episode_idx) + '.pth')
+            policy.save('checkpoints/checkpoint_' + str(episode_idx) + '.pth')
 
             if save_replay_buffer:
-                policy.save_replay_buffer('./replay_buffers/' + "0" + '-' + str(episode_idx) + '.pkl')
+                policy.save_replay_buffer('replay_buffers/replay_buffer_' + str(episode_idx) + '.pkl')
 
             if train_params['render']:
                 env_renderer.close_window()
