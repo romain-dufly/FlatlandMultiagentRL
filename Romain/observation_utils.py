@@ -15,7 +15,6 @@ def max_lt(seq, val):
         idx -= 1
     return max
 
-
 def min_gt(seq, val):
     """
     Return smallest item in seq for which item > val applies.
@@ -28,7 +27,6 @@ def min_gt(seq, val):
             min = seq[idx]
         idx -= 1
     return min
-
 
 def norm_obs_clip(obs, clip_min=-1, clip_max=1, fixed_radius=0, normalize_to_range=False):
     """
@@ -53,7 +51,6 @@ def norm_obs_clip(obs, clip_min=-1, clip_max=1, fixed_radius=0, normalize_to_ran
     norm = np.abs(max_obs - min_obs)
     return np.clip((np.array(obs) - min_obs) / norm, clip_min, clip_max)
 
-
 def _split_node_into_feature_groups(node) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     data = np.zeros(6)
     distance = np.zeros(1)
@@ -75,7 +72,6 @@ def _split_node_into_feature_groups(node) -> Tuple[np.ndarray, np.ndarray, np.nd
 
     return data, distance, agent_data
 
-
 def _split_subtree_into_feature_groups(node, current_tree_depth: int, max_tree_depth: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     if node == -np.inf:
         remaining_depth = max_tree_depth - current_tree_depth
@@ -96,7 +92,6 @@ def _split_subtree_into_feature_groups(node, current_tree_depth: int, max_tree_d
 
     return data, distance, agent_data
 
-
 def split_tree_into_feature_groups(tree, max_tree_depth: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     This function splits the tree into three difference arrays of values
@@ -111,7 +106,6 @@ def split_tree_into_feature_groups(tree, max_tree_depth: int) -> Tuple[np.ndarra
 
     return data, distance, agent_data
 
-
 def normalize_observation(observation, tree_depth: int, observation_radius=0):
     """
     This function normalizes the observation used by the RL algorithm
@@ -123,3 +117,31 @@ def normalize_observation(observation, tree_depth: int, observation_radius=0):
     agent_data = np.clip(agent_data, -1, 1)
     normalized_obs = np.concatenate((np.concatenate((data, distance)), agent_data))
     return normalized_obs
+
+def get_obs_properties(env):
+    obs_properties = {}
+    properties = env.obs_builder.get_properties()
+    env_config, agents_properties, valid_actions = properties
+    for key, value in env_config.items():
+        obs_properties[key] = value
+    for key, value in agents_properties.items():
+        obs_properties[key] = value
+    obs_properties["valid_actions"] = valid_actions
+    return obs_properties
+
+def parse_features(feature, obs_properties):
+    feature_list = {}
+    feature_list["agent_attr"] = np.array(feature[0])
+    feature_list["forest"] = np.array(feature[1][0])
+    feature_list["forest"][feature_list["forest"] == np.inf] = -1
+    feature_list["adjacency"] = np.array(feature[1][1])
+    feature_list["node_order"] = np.array(feature[1][2])
+    feature_list["edge_order"] = np.array(feature[1][3])
+    feature_list.update(obs_properties)
+    return feature_list
+
+def normalize_cutils(observation, env):
+    obs_properties = get_obs_properties(env)
+    full_obs = (observation, obs_properties)
+    obs_list = [parse_features(*full_obs)]
+    return obs_list
