@@ -68,7 +68,6 @@ class Network(nn.Module):
             nn.Linear(ns.hidden_sz, 1),
         )
 
-    # @torchsnooper.snoop()
     def forward(self, agents_attr, forest, adjacency, node_order, edge_order):
         batch_size, n_agents, num_nodes, _ = forest.shape
         device = next(self.parameters()).device
@@ -95,7 +94,6 @@ class Network(nn.Module):
         worker_action = self.actor_net(worker_action)
         return worker_action
 
-    # @torchsnooper.snoop()
     def critic(self, embedding, att_embedding):
         output = torch.cat([embedding, att_embedding], dim=-1)
         critic_value = self.critic_net(output)
