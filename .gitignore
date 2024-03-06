@@ -154,6 +154,7 @@ models/
 log.txt
 log*
 
+!test*.py
 # render test
 *.bmp
 *.jpg
