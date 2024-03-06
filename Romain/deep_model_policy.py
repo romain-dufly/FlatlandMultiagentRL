@@ -73,6 +73,14 @@ class DeepPolicy(Policy):
             return np.argmax(action_values.cpu().data.numpy())
         else:
             return random.choice(np.arange(self.action_size))
+        
+    def act_all(self, state, eps=0.):
+        state = torch.from_numpy(state).float().unsqueeze(0).to(self.device)
+        self.model.eval()
+        with torch.no_grad():
+            logits = self.model(state)
+        self.model.train()
+        softmax = F.softmax(logits, dim=1)
 
     def step(self, state, action, reward, next_state, done):
         assert not self.evaluation_mode, "Policy set to evaluation only."

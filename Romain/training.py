@@ -1,5 +1,4 @@
 import numpy as np
-import torch
 
 from flatland.utils.rendertools import RenderTool
 from observation_utils import normalize_observation
@@ -21,6 +20,7 @@ def train_agent(env, policy, train_params, obs_params):
     save_replay_buffer = train_params['save_replay_buffer']
 
     # Setup the environment
+    _,_ = env.reset()
     train_env = env
     eval_env = env
 
