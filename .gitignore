@@ -156,6 +156,7 @@ log.txt
 log*
 test*
 
+!test*.py
 # render test
 *.bmp
 *.jpg
