@@ -160,6 +160,8 @@ log*
 *.jpg
 *.mp4
 *.pkl
+*.gif
+*.pth
 
 # code test
 *.rdb
