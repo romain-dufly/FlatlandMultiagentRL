@@ -186,7 +186,7 @@ def train_agent(env, policy, train_params, obs_params):
             ), end=" ")
 
         # Evaluate policy and log results at some interval
-        if episode_idx % checkpoint_interval == 0 and n_eval_episodes > 0:
+        if (episode_idx % checkpoint_interval == 0 and n_eval_episodes > 0) or episode_idx == n_episodes - 1:
             scores, completions, nb_steps_eval = eval_policy(eval_env, policy, train_params, obs_params)
             print("\t🔍 Evaluation score: {:.3f} done: {:.1f}%".format(np.mean(scores), np.mean(completions) * 100.0))
 
