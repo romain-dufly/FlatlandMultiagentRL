@@ -229,6 +229,9 @@ def eval_policy(env, policy, train_params, obs_params):
     tree_depth = obs_params['observation_tree_depth']
     observation_radius = obs_params['observation_radius']
 
+    if train_params.get('LSTM'):
+        LSTM = train_params['LSTM']
+
     scores = []
     completions = []
     nb_steps = []
@@ -248,7 +251,11 @@ def eval_policy(env, policy, train_params, obs_params):
         for step in range(max_steps):
             for agent in env.get_agent_handles():
                 if obs[agent]:
-                    agent_obs[agent] = normalize_observation(obs[agent], tree_depth=tree_depth, observation_radius=observation_radius)
+                    if LSTM:
+                        obs_list = normalize_cutils(obs, env)
+                        agent_obs[agent] = get_features([individual_from_obs_list(obs_list[0], agent)])
+                    else:
+                        agent_obs[agent] = normalize_observation(obs[agent], tree_depth=tree_depth, observation_radius=observation_radius)
 
                 action = 0
                 if info['action_required'][agent]:

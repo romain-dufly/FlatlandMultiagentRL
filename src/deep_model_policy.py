@@ -90,19 +90,34 @@ class DeepPolicy(Policy):
         self.t_step = (self.t_step + 1) % self.update_every
         if self.t_step == 0:
             if len(self.memory) > self.batch_size:
-                experiences = self.memory.sample()
-                self.learn(experiences)
+                # if state is a tuple, sample using optionnal parameter 'LSTM'
+                if isinstance(state, tuple):
+                    experiences = self.memory.sample_lstm()
+                    self.learn(experiences, 'LSTM')
+                else:
+                    experiences = self.memory.sample()
+                    self.learn(experiences)
 
-    def learn(self, experiences):
+    def learn(self, experiences, lstm=None):
         """Update model parameters using given batch of experience."""
         states, actions, rewards, next_states, dones = experiences
 
         # Get expected Q values from local model
-        Q_expected = self.model(states).gather(1, actions)
+        if lstm:
+            # For each element in the list of states, get the Q values efficiently and stack them
+            Q_expected = torch.stack([self.model(*s) for s in states], dim=0).squeeze(1).squeeze(1)
+            Q_expected = Q_expected.gather(1, actions)
+        else:
+            Q_expected = self.model(states).gather(1, actions)
 
         # Compute Q targets for current states
-        Q_best_action = self.model(next_states).max(1)[1]
-        Q_targets_next = self.target(next_states).gather(1, Q_best_action.unsqueeze(-1))
+        if lstm:
+            Q_best_action = torch.stack([self.model(*s) for s in next_states], dim=0).squeeze(1).squeeze(1).max(1)[1]
+            Q_targets_next = torch.stack([self.target(*s) for s in next_states], dim=0).squeeze(1).squeeze(1)
+            Q_targets_next = Q_targets_next.gather(1, Q_best_action.unsqueeze(-1))
+        else:
+            Q_best_action = self.model(next_states).max(1)[1]
+            Q_targets_next = self.target(next_states).gather(1, Q_best_action.unsqueeze(-1))
         Q_targets = rewards + (self.gamma * Q_targets_next * (1 - dones))
 
         # Compute loss
@@ -165,6 +180,21 @@ class ReplayBuffer:
             .float().to(self.device)
         next_states = torch.from_numpy(self.__v_stack_impr([e.next_state for e in experiences if e is not None])) \
             .float().to(self.device)
+        dones = torch.from_numpy(self.__v_stack_impr([e.done for e in experiences if e is not None]).astype(np.uint8)) \
+            .float().to(self.device)
+
+        return states, actions, rewards, next_states, dones
+    
+    def sample_lstm(self):
+        """Randomly sample a batch of experiences from memory when using LSTM."""
+        experiences = random.sample(self.memory, k=self.batch_size)
+
+        states = [e.state[0] for e in experiences if e is not None]
+        actions = torch.from_numpy(self.__v_stack_impr([e.action for e in experiences if e is not None])) \
+            .long().to(self.device)
+        rewards = torch.from_numpy(self.__v_stack_impr([e.reward for e in experiences if e is not None])) \
+            .float().to(self.device)
+        next_states = [e.next_state[0] for e in experiences if e is not None]
         dones = torch.from_numpy(self.__v_stack_impr([e.done for e in experiences if e is not None]).astype(np.uint8)) \
             .float().to(self.device)
 
