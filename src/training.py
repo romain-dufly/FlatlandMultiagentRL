@@ -231,6 +231,8 @@ def eval_policy(env, policy, train_params, obs_params):
 
     if train_params.get('LSTM'):
         LSTM = train_params['LSTM']
+    else:
+        LSTM = None
 
     scores = []
     completions = []
