@@ -30,7 +30,9 @@ def cem_uncorrelated(objective_function,
 
     n_elite = math.ceil(sample_size * elite_frac)
     var_array = np.diag(var_array)
+    
     for it in range(max_iterations):
+
         samples = np.random.multivariate_normal(mean = mean_array, cov = var_array, size = sample_size)
         eval_samples = []
         for sample in samples:
