@@ -1,7 +1,7 @@
 import numpy as np
 
 from flatland.utils.rendertools import RenderTool
-from observation_utils import normalize_observation
+from observation_utils import *
 from flatland.envs.step_utils.states import TrainState
 
 def train_agent(env, policy, train_params, obs_params):
@@ -19,7 +19,16 @@ def train_agent(env, policy, train_params, obs_params):
     restore_replay_buffer = train_params['restore_replay_buffer']
     save_replay_buffer = train_params['save_replay_buffer']
 
-    # Setup the environment
+    if train_params['LSTM']: # Observation normalization choice
+        LSTM = train_params['LSTM']
+    else:
+        LSTM = False
+    if train_params['centralized']:  # Are agents trained separately or together
+        centralized = train_params['centralized']
+    else:
+        centralized = False
+
+    # Setup the environments
     _,_ = env.reset()
     train_env = env
     eval_env = env
@@ -39,16 +48,15 @@ def train_agent(env, policy, train_params, obs_params):
     if restore_replay_buffer:
         try:
             policy.load_replay_buffer(restore_replay_buffer)
-            policy.test()
         except RuntimeError as e:
-            print("\n🛑 Could't load replay buffer, were the experiences generated using the same tree depth?")
+            print("\n Could't load replay buffer.")
             print(e)
             exit(1)
 
     print("\n💾 Replay buffer status: {}/{} experiences".format(len(policy.memory.memory), train_params['buffer_size']))
 
     if save_replay_buffer:
-        print("⚠️  Careful! Saving replay buffers will quickly consume a lot of disk space.")
+        print("Will save replay buffer. Doing so will quickly consume a lot of disk space.")
 
     n_agents = train_env.get_num_agents()
     print("\n🚉 Training {} trains on {}x{} grid for {} episodes, evaluating on {} episodes every {} episodes.\n".format(
@@ -80,30 +88,40 @@ def train_agent(env, policy, train_params, obs_params):
         nb_steps = 0
         actions_taken = []
 
+        ################################################
         # Build initial agent-specific observations
+        if LSTM:
+            obs_list = normalize_cutils(obs, train_env)
         for agent in train_env.get_agent_handles():
             if obs[agent]:
-                agent_obs[agent] = normalize_observation(obs[agent], observation_tree_depth, observation_radius=observation_radius)
+                if LSTM:
+                    agent_obs[agent] = get_features([individual_from_obs_list(obs_list[0], agent)])
+                else:
+                    agent_obs[agent] = normalize_observation(obs[agent], observation_tree_depth, observation_radius=observation_radius)
                 agent_prev_obs[agent] = agent_obs[agent].copy()
 
         # Run episode
-        for step in range(max_steps):
-            for agent in train_env.get_agent_handles():
-                if info['action_required'][agent]:
-                    update_values[agent] = True
-                    action = policy.act(agent_obs[agent], eps=eps_start)
+        for _ in range(max_steps):
+            # Get all actions
+            if centralized:
+                pass
+            else:
+                for agent in train_env.get_agent_handles():
+                    if info['action_required'][agent]:
+                        update_values[agent] = True
+                        action = policy.act(agent_obs[agent], eps=eps_start)
 
-                    action_count[action] += 1
-                    actions_taken.append(action)
-                else:
-                    # An action is not required if the train hasn't joined the railway network,
-                    # if it already reached its target, or if is currently malfunctioning.
-                    update_values[agent] = False
-                    action = 0
-                action_dict.update({agent: action})
+                        action_count[action] += 1
+                        actions_taken.append(action)
+                    else:
+                        update_values[agent] = False
+                        action = 0
+                    action_dict.update({agent: action})
 
             # Environment step
             next_obs, all_rewards, done, info = train_env.step(action_dict)
+            if LSTM:
+                obs_list = normalize_cutils(next_obs, train_env)
 
             # Render an episode at some interval
             if train_params['render'] and episode_idx % checkpoint_interval == 0:
@@ -119,18 +137,21 @@ def train_agent(env, policy, train_params, obs_params):
                 if update_values[agent] or done['__all__']:
                     # Only learn from timesteps where somethings happened
                     policy.step(agent_prev_obs[agent], agent_prev_action[agent], all_rewards[agent], agent_obs[agent], done[agent])
-
                     agent_prev_obs[agent] = agent_obs[agent].copy()
                     agent_prev_action[agent] = action_dict[agent]
+                score += all_rewards[agent]
 
                 # Preprocess the new observations
                 if next_obs[agent]:
-                    agent_obs[agent] = normalize_observation(next_obs[agent], observation_tree_depth, observation_radius=observation_radius)
-
-                score += all_rewards[agent]
+                    if LSTM:
+                        agent_obs[agent] = get_features([individual_from_obs_list(obs_list[0], agent)])
+                    else:
+                        agent_obs[agent] = normalize_observation(next_obs[agent], observation_tree_depth, observation_radius=observation_radius)
 
             if done['__all__']:
                 break
+        
+        ################################################
 
         # Epsilon decay
         eps_start = max(eps_end, eps_decay * eps_start)

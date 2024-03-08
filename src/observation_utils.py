@@ -1,6 +1,11 @@
+
 from typing import Tuple
 import numpy as np
+import torch
+
 from flatland.envs.observations import TreeObsForRailEnv
+
+'''Compiled from official flatland documentation and examples'''
 
 def max_lt(seq, val):
     """
@@ -145,3 +150,41 @@ def normalize_cutils(observation, env):
     full_obs = (observation, obs_properties)
     obs_list = [parse_features(*full_obs)]
     return obs_list
+
+def get_features(obs_list):
+    agents_attr = obs_list[0]["agent_attr"]
+    agents_attr = torch.unsqueeze(torch.from_numpy(agents_attr), axis=0).to(
+        dtype=torch.float32
+    )
+    forest = obs_list[0]["forest"]
+    forest = torch.unsqueeze(torch.from_numpy(forest), axis=0).to(
+        dtype=torch.float32
+    )
+    adjacency = obs_list[0]["adjacency"]
+    adjacency = torch.unsqueeze(torch.from_numpy(adjacency), axis=0).to(
+        dtype=torch.int64
+    )
+    node_order = obs_list[0]["node_order"]
+    node_order = torch.unsqueeze(torch.from_numpy(node_order), axis=0).to(
+        dtype=torch.int64
+    )
+    edge_order = obs_list[0]["edge_order"]
+    edge_order = torch.unsqueeze(torch.from_numpy(edge_order), axis=0).to(
+        dtype=torch.int64
+    )
+    return agents_attr, forest, adjacency, node_order, edge_order
+
+def individual_from_obs_list(obs_list, i):
+    """Get individual observation from the list of observations.
+    Args:
+        obs_list: contains a dictionnary. For each value, if it contains a list or array,
+        keep only the ith element. Returns a dictionnary of the same format as the input."""
+    obs = {}
+    for k, v in obs_list.items():
+        if isinstance(v, list):
+            obs[k] = [v[i]]
+        elif isinstance(v, np.ndarray):
+            obs[k] = np.array([v[i]])
+        else:
+            obs[k] = v
+    return obs
