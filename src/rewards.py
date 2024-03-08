@@ -20,8 +20,10 @@ class RailEnvJBR(RailEnv) :
     Reference : Flatland Competition 2020, Team JBR_HSE : Konstantin Makhnev, Oleg Svidchenko, Vladimir Egorov, Dmitry Ivanov, 
     Aleksei Shpilman; 1st place RL. https://arxiv.org/abs/2103.16511
     """
-    def __init__(self, *args, **kwargs) :
+    def __init__(self, w_deadlocked, w_finished, *args, **kwargs) :
         super().__init__(*args, **kwargs)
+        self.w_deadlocked = w_deadlocked
+        self.w_finished = w_finished
     
     def update_step_rewards(self,i_agent) :
         """
@@ -65,7 +67,7 @@ class RailEnvJBR(RailEnv) :
             has_finished = 1
 
         # Update the step reward
-        step_reward = 0.01 * delta_distance - 5 * is_deadlocked + 10 * has_finished
+        step_reward = 0.01 * delta_distance - self.w_deadlocked * is_deadlocked + self.w_finished * has_finished
 
         self.rewards_dict[i_agent] += step_reward
 
@@ -107,7 +109,21 @@ def get_testing_environements(
         malfunction_generator=malfunction_generator
     )
 
-    test_envs['JBR'] = RailEnvJBR(
+    test_envs['JBR_0'] = RailEnvJBR(
+        w_deadlocked=5,
+        w_finished=10,
+        width=width,
+        height=height,
+        rail_generator=rail_generator,
+        line_generator=line_generator,
+        number_of_agents=number_of_agents,
+        obs_builder_object=obs_builder_object,
+        malfunction_generator=malfunction_generator
+    )
+
+    test_envs['JBR_1'] = RailEnvJBR(
+        w_deadlocked=1,
+        w_finished=10,
         width=width,
         height=height,
         rail_generator=rail_generator,
