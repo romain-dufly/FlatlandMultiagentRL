@@ -181,7 +181,7 @@ def train_agent(env, policy, train_params, obs_params, checkpoints_folder='check
         smoothed_completion = smoothed_completion * smoothing + completion * (1.0 - smoothing)
 
         # Print logs
-        if episode_idx % checkpoint_interval == 0:
+        if episode_idx % checkpoint_interval == 0 or episode_idx == n_episodes - 1:
             policy.save(checkpoints_folder+'checkpoint_' + str(episode_idx) + '.pth')
 
             if save_replay_buffer:
