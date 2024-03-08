@@ -43,7 +43,6 @@ class DeepPolicy(Policy):
     def __init__(self, model, p, evaluation_mode=False):
         
         self.evaluation_mode = evaluation_mode
-        self.model = model
         self.action_size = p.action_size
 
         if p.use_gpu and torch.cuda.is_available():
@@ -52,6 +51,8 @@ class DeepPolicy(Policy):
         else:
             self.device = torch.device("cpu")
             print("Using CPU")
+
+        self.model = model.to(self.device)
 
         if not evaluation_mode:
             self.target = copy.deepcopy(self.model) # target network
