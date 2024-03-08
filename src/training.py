@@ -4,7 +4,7 @@ from flatland.utils.rendertools import RenderTool
 from observation_utils import *
 from flatland.envs.step_utils.states import TrainState
 
-def train_agent(env, policy, train_params, obs_params):
+def train_agent(env, policy, train_params, obs_params, checkpoints_folder='checkpoints/'):
     # Observation parameters
     observation_tree_depth = obs_params['observation_tree_depth']
     observation_radius = obs_params['observation_radius']
@@ -181,7 +181,7 @@ def train_agent(env, policy, train_params, obs_params):
 
         # Print logs
         if episode_idx % checkpoint_interval == 0:
-            policy.save('checkpoints/checkpoint_' + str(episode_idx) + '.pth')
+            policy.save(checkpoints_folder+'checkpoint_' + str(episode_idx) + '.pth')
 
             if save_replay_buffer:
                 policy.save_replay_buffer('replay_buffers/replay_buffer_' + str(episode_idx) + '.pkl')
@@ -232,9 +232,11 @@ def eval_policy(env, policy, train_params, obs_params):
     completions = []
     nb_steps = []
 
-    for episode_idx in range(n_eval_episodes):
+    seeds = range(n_eval_episodes)
 
-        obs, info = env.reset(regenerate_rail=True, regenerate_schedule=True)
+    for seed in seeds:
+
+        obs, info = env.reset(regenerate_rail=True, regenerate_schedule=True, random_seed=seed)
         
         max_steps = env._max_episode_steps
         action_dict = dict()
