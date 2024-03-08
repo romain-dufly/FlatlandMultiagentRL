@@ -33,6 +33,8 @@ def cem_uncorrelated(objective_function,
     
     for it in range(max_iterations):
 
+        print("iteration : ", it)
+
         samples = np.random.multivariate_normal(mean = mean_array, cov = var_array, size = sample_size)
         eval_samples = []
         for sample in samples:
@@ -47,6 +49,7 @@ def cem_uncorrelated(objective_function,
         hist_dict[it] = [average_reward] + [mu for mu in mean_array] + [var for var in np.diag(var_array)]
 
         if it%print_every == 0:
+            print([sample[1] for sample in eval_samples])
             print(average_reward)
         if average_reward < success_score:
            break
@@ -106,6 +109,8 @@ class ObjectiveFunction:
     def eval(self, policy_params, num_episodes=None, max_time_steps=None, render=False):
         """Evaluate a policy"""
 
+        #print("Evaluation function called")
+
         self.num_evals += 1
 
         if num_episodes is None:
@@ -134,12 +139,18 @@ class ObjectiveFunction:
                     actions[agent] = self.policy.act(agent_obs[agent], policy_params)
                 
                 state, all_rewards, done, info = self.env.step(actions)
+                #print("step : ", t)
+                #print("rewards : ", all_rewards)
+                #print("actions : ", actions)
                 total_rewards += sum(all_rewards.values())
 
-                if done:
+                if done['__all__']:
+                    #print("All agents reached their targets!")
+                    #print(all_rewards)
                     break
 
             average_total_rewards += float(total_rewards) / num_episodes
+            #print("Test Episode {0}: Total Reward = {1}".format(i_episode, total_rewards))
 
             if render:
                 print("Test Episode {0}: Total Reward = {1}".format(i_episode, total_rewards))
