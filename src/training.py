@@ -1,7 +1,7 @@
 import numpy as np
 
 from flatland.utils.rendertools import RenderTool
-from observation_utils import normalize_observation, normalize_cutils, get_features
+from observation_utils import *
 from flatland.envs.step_utils.states import TrainState
 
 def train_agent(env, policy, train_params, obs_params):
@@ -92,15 +92,16 @@ def train_agent(env, policy, train_params, obs_params):
         # Build initial agent-specific observations
         if LSTM:
             obs_list = normalize_cutils(obs, train_env)
-            features = get_features(obs_list)
-        else:
-            for agent in train_env.get_agent_handles():
-                if obs[agent]:
+        for agent in train_env.get_agent_handles():
+            if obs[agent]:
+                if LSTM:
+                    agent_obs[agent] = get_features([individual_from_obs_list(obs_list[0], agent)])
+                else:
                     agent_obs[agent] = normalize_observation(obs[agent], observation_tree_depth, observation_radius=observation_radius)
-                    agent_prev_obs[agent] = agent_obs[agent].copy()
+                agent_prev_obs[agent] = agent_obs[agent].copy()
 
         # Run episode
-        for step in range(max_steps):
+        for _ in range(max_steps):
             # Get all actions
             if centralized:
                 pass
@@ -108,10 +109,8 @@ def train_agent(env, policy, train_params, obs_params):
                 for agent in train_env.get_agent_handles():
                     if info['action_required'][agent]:
                         update_values[agent] = True
-                        if LSTM:
-                            poli
-                        else:
-                            action = policy.act(agent_obs[agent], eps=eps_start)
+                        action = policy.act(agent_obs[agent], eps=eps_start)
+
                         action_count[action] += 1
                         actions_taken.append(action)
                     else:
@@ -121,6 +120,8 @@ def train_agent(env, policy, train_params, obs_params):
 
             # Environment step
             next_obs, all_rewards, done, info = train_env.step(action_dict)
+            if LSTM:
+                obs_list = normalize_cutils(next_obs, train_env)
 
             # Render an episode at some interval
             if train_params['render'] and episode_idx % checkpoint_interval == 0:
@@ -136,18 +137,16 @@ def train_agent(env, policy, train_params, obs_params):
                 if update_values[agent] or done['__all__']:
                     # Only learn from timesteps where somethings happened
                     policy.step(agent_prev_obs[agent], agent_prev_action[agent], all_rewards[agent], agent_obs[agent], done[agent])
-
                     agent_prev_obs[agent] = agent_obs[agent].copy()
                     agent_prev_action[agent] = action_dict[agent]
+                score += all_rewards[agent]
 
                 # Preprocess the new observations
                 if next_obs[agent]:
                     if LSTM:
-                        pass
+                        agent_obs[agent] = get_features([individual_from_obs_list(obs_list[0], agent)])
                     else:
                         agent_obs[agent] = normalize_observation(next_obs[agent], observation_tree_depth, observation_radius=observation_radius)
-
-                score += all_rewards[agent]
 
             if done['__all__']:
                 break

@@ -182,7 +182,6 @@ class TreeLSTM(nn.Module):
 
         h[node_mask, :] = o * torch.tanh(c[node_mask])
 
-
 class Transformer(nn.Module):
     def __init__(self, embed_dim, num_heads):
         super(Transformer, self).__init__()
@@ -204,6 +203,54 @@ class Transformer(nn.Module):
         output = output.permute(1, 0, 2)
         output = self.att_mlp(torch.cat([input, output], dim=-1))
         return output
+
+class LSTMQNetwork(nn.Module):
+    def __init__(self):
+        super(TransLSTM, self).__init__()
+        self.tree_lstm = TreeLSTM(fp.node_sz, ns.tree_embedding_sz)
+        self.attr_embedding = nn.Sequential(
+            nn.Linear(fp.agent_attr, 2 * ns.hidden_sz),
+            nn.GELU(),
+            nn.Linear(2 * ns.hidden_sz, 2 * ns.hidden_sz),
+            nn.GELU(),
+            nn.Linear(2 * ns.hidden_sz, 2 * ns.hidden_sz),
+            nn.GELU(),
+            nn.Linear(2 * ns.hidden_sz, ns.hidden_sz),
+            nn.GELU(),
+        )
+        self.actor_net = nn.Sequential(
+            nn.Linear(ns.hidden_sz + ns.tree_embedding_sz, 2 * ns.hidden_sz),
+            nn.GELU(),
+            nn.Linear(ns.hidden_sz * 2, ns.hidden_sz),
+            nn.GELU(),
+            nn.Linear(ns.hidden_sz, fp.action_sz),
+            nn.Softmax(dim=-1),
+        )
+        self.critic_net = nn.Sequential(
+            nn.Linear(ns.hidden_sz + ns.tree_embedding_sz, ns.hidden_sz * 2),
+            nn.GELU(),
+            nn.Linear(ns.hidden_sz * 2, ns.hidden_sz),
+            nn.GELU(),
+            nn.Linear(ns.hidden_sz, 1),
+        )
+
+    def forward(self, agents_attr, forest, adjacency, node_order, edge_order):
+        batch_size, n_agents, num_nodes, _ = forest.shape
+        device = next(self.parameters()).device
+        adjacency = self.modify_adjacency(adjacency, device)
+
+        tree_embedding = self.tree_lstm(forest, adjacency, node_order, edge_order)
+        tree_embedding = tree_embedding.unflatten(0, (batch_size, n_agents, num_nodes))[
+            :, :, 0, :
+        ]
+
+        agent_attr_embedding = self.attr_embedding(agents_attr)
+        embedding = torch.cat([agent_attr_embedding, tree_embedding], dim=2)
+
+        worker_action = self.actor_net(embedding)
+        critic_value = self.critic_net(embedding)
+        critic_value = critic_value.mean(1).view(-1)
+        return [worker_action], critic_value  # (batch size, 1)
 
 class TransLSTM(nn.Module):
     """
