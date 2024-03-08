@@ -250,7 +250,7 @@ class LSTMQNetwork(nn.Module):
         worker_action = self.actor_net(embedding)
         critic_value = self.critic_net(embedding)
         critic_value = critic_value.mean(1).view(-1)
-        return [worker_action], critic_value  # (batch size, 1)
+        return critic_value + worker_action - worker_action.mean(1)
 
     def modify_adjacency(self, adjacency, _device):
         batch_size, n_agents, num_edges, _ = adjacency.shape
