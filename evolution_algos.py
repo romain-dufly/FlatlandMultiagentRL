@@ -132,6 +132,7 @@ class ObjectiveFunction:
                     actions[agent] = self.policy.act(agent_obs[agent], policy_params)
                 
                 state, all_rewards, done, info = self.env.step(actions)
+                print(all_rewards)
                 total_rewards += sum(all_rewards.values())
 
                 if done:
