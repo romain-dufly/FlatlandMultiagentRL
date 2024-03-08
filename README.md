@@ -31,6 +31,11 @@ $ cd ..
 $ pip install -r requirements.txt
 ```
 
+### Install torch with CUDA capabilities (for training on A5000 GPUs)
+```shell
+$ pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+```
+
 ### Build flatland_cutils
 **NOTE** : this is the difficult part of the installation. May be skipped if you don't want to use the feature parser from `flatland_cutils`. The normal parser from `flatland` can be used instead, using TreeObsForRailEnv and the function normalize_observation (to get features from the observation).
 
