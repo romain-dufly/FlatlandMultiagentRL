@@ -62,10 +62,13 @@ class DeepPolicy(Policy):
             self.t_step = 0 # counter for learning steps
 
     def act(self, state, eps=0.):
-        state = torch.from_numpy(state).float().unsqueeze(0).to(self.device)
         self.model.eval()
         with torch.no_grad():
-            action_values = self.model(state)
+            if isinstance(state, tuple):
+                action_values = self.model(*state)
+            else:
+                state = torch.from_numpy(state).float().unsqueeze(0).to(self.device)
+                action_values = self.model(state)
         self.model.train()
 
         # Use an epsilon-greedy policy

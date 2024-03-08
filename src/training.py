@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 
 from flatland.utils.rendertools import RenderTool
 from observation_utils import *
@@ -19,11 +20,11 @@ def train_agent(env, policy, train_params, obs_params, checkpoints_folder='check
     restore_replay_buffer = train_params['restore_replay_buffer']
     save_replay_buffer = train_params['save_replay_buffer']
 
-    if train_params['LSTM']: # Observation normalization choice
+    if train_params.get('LSTM'): # Observation normalization choice
         LSTM = train_params['LSTM']
     else:
         LSTM = False
-    if train_params['centralized']:  # Are agents trained separately or together
+    if train_params.get('centralized'): # Are agents trained separately or together
         centralized = train_params['centralized']
     else:
         centralized = False
@@ -98,7 +99,7 @@ def train_agent(env, policy, train_params, obs_params, checkpoints_folder='check
                     agent_obs[agent] = get_features([individual_from_obs_list(obs_list[0], agent)])
                 else:
                     agent_obs[agent] = normalize_observation(obs[agent], observation_tree_depth, observation_radius=observation_radius)
-                agent_prev_obs[agent] = agent_obs[agent].copy()
+                agent_prev_obs[agent] = copy.deepcopy(agent_obs[agent])
 
         # Run episode
         for _ in range(max_steps):
@@ -137,7 +138,7 @@ def train_agent(env, policy, train_params, obs_params, checkpoints_folder='check
                 if update_values[agent] or done['__all__']:
                     # Only learn from timesteps where somethings happened
                     policy.step(agent_prev_obs[agent], agent_prev_action[agent], all_rewards[agent], agent_obs[agent], done[agent])
-                    agent_prev_obs[agent] = agent_obs[agent].copy()
+                    agent_prev_obs[agent] = copy.deepcopy(agent_obs[agent])
                     agent_prev_action[agent] = action_dict[agent]
                 score += all_rewards[agent]
 

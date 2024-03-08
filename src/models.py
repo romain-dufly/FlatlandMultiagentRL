@@ -206,7 +206,7 @@ class Transformer(nn.Module):
 
 class LSTMQNetwork(nn.Module):
     def __init__(self):
-        super(TransLSTM, self).__init__()
+        super(LSTMQNetwork, self).__init__()
         self.tree_lstm = TreeLSTM(fp.node_sz, ns.tree_embedding_sz)
         self.attr_embedding = nn.Sequential(
             nn.Linear(fp.agent_attr, 2 * ns.hidden_sz),
@@ -252,13 +252,29 @@ class LSTMQNetwork(nn.Module):
         critic_value = critic_value.mean(1).view(-1)
         return [worker_action], critic_value  # (batch size, 1)
 
-class TransLSTM(nn.Module):
+    def modify_adjacency(self, adjacency, _device):
+        batch_size, n_agents, num_edges, _ = adjacency.shape
+        num_nodes = num_edges + 1
+        id_tree = torch.arange(0, batch_size * n_agents, device=_device)
+        id_nodes = id_tree.view(batch_size, n_agents, 1)
+        adjacency[adjacency == -2] = (
+            -batch_size * n_agents * num_nodes
+        )  # node_idx == -2 invalid node
+        adjacency[..., 0] += id_nodes * num_nodes
+        adjacency[..., 1] += id_nodes * num_nodes
+        adjacency[adjacency < 0] = -2
+        return adjacency
+
+class DuelingTrans(nn.Module):
+    pass
+
+class LSTMTrans(nn.Module):
     """
     Feature:  cat(agents_attr_embedding, tree_embedding)
     structure: mlp
     """
     def __init__(self):
-        super(TransLSTM, self).__init__()
+        super(LSTMTrans, self).__init__()
         self.tree_lstm = TreeLSTM(fp.node_sz, ns.tree_embedding_sz)
         self.attr_embedding = nn.Sequential(
             nn.Linear(fp.agent_attr, 2 * ns.hidden_sz),
