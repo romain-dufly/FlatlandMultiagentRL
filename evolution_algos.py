@@ -142,7 +142,6 @@ class ObjectiveFunction:
                 #print("step : ", t)
                 #print("rewards : ", all_rewards)
                 #print("actions : ", actions)
-                print(all_rewards)
                 total_rewards += sum(all_rewards.values())
 
                 if done['__all__']:
