@@ -48,8 +48,10 @@ class DeepPolicy(Policy):
 
         if p.use_gpu and torch.cuda.is_available():
             self.device = torch.device("cuda")
+            print("Using GPU")
         else:
             self.device = torch.device("cpu")
+            print("Using CPU")
 
         if not evaluation_mode:
             self.target = copy.deepcopy(self.model) # target network
@@ -165,7 +167,10 @@ class ReplayBuffer:
 
     def add(self, state, action, reward, next_state, done):
         """Add a new experience to memory."""
-        e = Experience(np.expand_dims(state, 0), action, reward, np.expand_dims(next_state, 0), done)
+        if isinstance(state, tuple):
+            e = Experience(state, action, reward, next_state, done)
+        else:
+            e = Experience(np.expand_dims(state, 0), action, reward, np.expand_dims(next_state, 0), done)
         self.memory.append(e)
 
     def sample(self):
@@ -188,13 +193,12 @@ class ReplayBuffer:
     def sample_lstm(self):
         """Randomly sample a batch of experiences from memory when using LSTM."""
         experiences = random.sample(self.memory, k=self.batch_size)
-
-        states = [e.state[0] for e in experiences if e is not None]
+        states = [e.state for e in experiences if e is not None]
         actions = torch.from_numpy(self.__v_stack_impr([e.action for e in experiences if e is not None])) \
             .long().to(self.device)
         rewards = torch.from_numpy(self.__v_stack_impr([e.reward for e in experiences if e is not None])) \
             .float().to(self.device)
-        next_states = [e.next_state[0] for e in experiences if e is not None]
+        next_states = [e.next_state for e in experiences if e is not None]
         dones = torch.from_numpy(self.__v_stack_impr([e.done for e in experiences if e is not None]).astype(np.uint8)) \
             .float().to(self.device)
 
