@@ -83,6 +83,7 @@ class RailEnvJBR(RailEnv) :
         """Normalize the reward"""
         return reward/self._max_episode_steps
 
+# Custom environment with dense reward from Team JBR_HSE and environment end reward
 class RailEnvJBR_End(RailEnv) :
     """
     Same as RailEnvJBR but with environment end reward as well.
@@ -148,7 +149,7 @@ class RailEnvJBR_End(RailEnv) :
 
 class RailEnvDense(RailEnv) :
     """
-    Give end reward at each timestep.
+    Gives the environmental end reward at each timestep.
     """
 
     def __init__(self, cancellation_factor, collective=False, normalized=False, double_end=False, *args, **kwargs) :
@@ -263,7 +264,7 @@ def get_testing_environements(
         malfunction_generator=malfunction_generator
     )
 
-    test_envs['JBR_0'] = RailEnvJBR(
+    test_envs['JBR'] = RailEnvJBR(
         w_deadlocked=5,
         w_finished=10,
         width=width,
@@ -275,6 +276,7 @@ def get_testing_environements(
         malfunction_generator=malfunction_generator
     )
 
+    # Modified weights of JBR
     test_envs['JBR_1'] = RailEnvJBR(
         w_deadlocked=1,
         w_finished=10,
@@ -287,6 +289,7 @@ def get_testing_environements(
         malfunction_generator=malfunction_generator
     )
 
+    # Modified weights of JBR
     test_envs['JBR_2'] = RailEnvJBR(
         w_deadlocked=1,
         w_finished=20,
@@ -299,6 +302,7 @@ def get_testing_environements(
         malfunction_generator=malfunction_generator
     )
 
+    # Modified weights of JBR and normalized rewards
     test_envs['JBR_Norm'] = RailEnvJBR(
         w_deadlocked=1,
         w_finished=20,
@@ -312,7 +316,8 @@ def get_testing_environements(
         malfunction_generator=malfunction_generator
     )
 
-    test_envs['JBREnd'] = RailEnvJBR_End(
+    # Step reward from modified JBR and flatland reward
+    test_envs['JBR_modified'] = RailEnvJBR_End(
         w_deadlocked=1,
         w_finished=20,
         normalized=True,
@@ -325,7 +330,8 @@ def get_testing_environements(
         malfunction_generator=malfunction_generator
     )
 
-    test_envs['Dense'] = RailEnvDense(
+    # Dense reward from the flatland reward
+    test_envs['Dense_base'] = RailEnvDense(
         cancellation_factor=1,
         normalized=True,
         width=width,
@@ -337,7 +343,8 @@ def get_testing_environements(
         malfunction_generator=malfunction_generator
     )
 
-    test_envs['Collective'] = RailEnvDense(
+    # Common step reward for all agents from Dense_base
+    test_envs['Collective_base'] = RailEnvDense(
         cancellation_factor=1,
         normalized=True,
         collective=True,
@@ -350,6 +357,7 @@ def get_testing_environements(
         malfunction_generator=malfunction_generator
     )
 
+    # Dense reward + end reward (so double reward for last step)
     test_envs['DoubleEnd'] = RailEnvDense(
         cancellation_factor=1,
         normalized=True,
