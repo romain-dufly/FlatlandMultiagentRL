@@ -139,7 +139,7 @@ class DeepPolicy(Policy):
         torch.save(self.model.state_dict(), filename)
 
     def load(self, filename):
-        self.model.load_state_dict(torch.load(filename))
+        self.model.load_state_dict(torch.load(filename, map_location=self.device))
         self.target = copy.deepcopy(self.model)
     
     def save_replay_buffer(self, filename, size):
