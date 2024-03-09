@@ -7,7 +7,7 @@ import PIL
 import imageio
 from IPython.display import Image, clear_output
 
-from observation_utils import normalize_observation
+from observation_utils import *
 
 # Adapted for the labs code and code from flatland documentation
 class RenderWrapper:
@@ -44,7 +44,7 @@ class RenderWrapper:
             imageio.mimsave(filename + '.gif', [np.array(img) for i, img in enumerate(self.images) if i%1 == 0], duration=100, loop=0)
             return Image(open(filename + '.gif','rb').read())
 
-def run_one_test(env, policy, seed, obs_params, env_renderer=None) :
+def run_one_test(env, policy, seed, obs_params, env_renderer=None, LSTM=False) :
 
     tree_depth = obs_params['observation_tree_depth']
     observation_radius = obs_params['observation_radius']
@@ -52,6 +52,9 @@ def run_one_test(env, policy, seed, obs_params, env_renderer=None) :
     obs, info = env.reset(regenerate_rail=True, regenerate_schedule=True, random_seed=seed)
     if env_renderer is not None:
         env_renderer.render()
+    
+    if LSTM:
+        obs_list = normalize_cutils(obs, env)
         
     max_steps = env._max_episode_steps
     action_dict = dict()
@@ -64,7 +67,10 @@ def run_one_test(env, policy, seed, obs_params, env_renderer=None) :
     for step in range(max_steps):
         for agent in env.get_agent_handles():
             if obs[agent]:
-                agent_obs[agent] = normalize_observation(obs[agent], tree_depth=tree_depth, observation_radius=observation_radius)
+                if LSTM:
+                    agent_obs[agent] = get_features([individual_from_obs_list(obs_list[0], agent)])
+                else:
+                    agent_obs[agent] = normalize_observation(obs[agent], tree_depth=tree_depth, observation_radius=observation_radius)
             
             action = 0
             if info['action_required'][agent]:
@@ -91,7 +97,7 @@ def run_one_test(env, policy, seed, obs_params, env_renderer=None) :
 
     return normalized_score, completion, final_step
 
-def test_policy(env, policy, n_eval_episodes, obs_params, seeds=None):
+def test_policy(env, policy, n_eval_episodes, obs_params, seeds=None, LSTM=False):
 
     # Check len(seeds) == n_eval_episodes
     if seeds is not None:
@@ -105,7 +111,7 @@ def test_policy(env, policy, n_eval_episodes, obs_params, seeds=None):
 
     for seed in seeds:
 
-        normalized_score, completion, final_step = run_one_test(env, policy, seed, obs_params)
+        normalized_score, completion, final_step = run_one_test(env, policy, seed, obs_params, env_renderer=None, LSTM=LSTM)
 
         scores.append(normalized_score)
         completions.append(completion)
@@ -115,8 +121,8 @@ def test_policy(env, policy, n_eval_episodes, obs_params, seeds=None):
 
     return scores, completions, nb_steps, env.seed_history[-n_eval_episodes:]
 
-def render_one_test(env, policy, obs_params, real_time_render = True, force_gif=False, seed=1):
+def render_one_test(env, policy, obs_params, real_time_render = True, force_gif=False, seed=1, LSTM=False):
     obs, info = env.reset(regenerate_rail=True, regenerate_schedule=True, random_seed=seed)
     env_renderer = RenderWrapper(env, real_time_render, force_gif)
-    run_one_test(env, policy, seed, obs_params, env_renderer)
+    run_one_test(env, policy, seed, obs_params, env_renderer, LSTM)
     return env_renderer
