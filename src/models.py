@@ -266,7 +266,43 @@ class LSTMQNetwork(nn.Module):
         return adjacency
 
 class DuelingTrans(nn.Module):
-    pass
+    def __init__(self, state_size, action_size=5):
+        super(DuelingTrans, self).__
+        self.feature_embedding = nn.Sequential(
+            nn.Linear(state_size, 2 * ns.hidden_sz),
+            nn.GELU(),
+            nn.Linear(2 * ns.hidden_sz, 2 * ns.hidden_sz),
+            nn.GELU(),
+            nn.Linear(2 * ns.hidden_sz, ns.hidden_sz),
+            nn.GELU(),
+        )
+        self.transformer = nn.Sequential(
+            Transformer(ns.hidden_sz, 4),
+            Transformer(ns.hidden_sz, 4),
+            Transformer(ns.hidden_sz, 4),
+        )
+        self.actor_net = nn.Sequential(
+            nn.Linear(ns.hidden_sz * 2, ns.hidden_sz * 2),
+            nn.GELU(),
+            nn.Linear(ns.hidden_sz * 2, ns.hidden_sz),
+            nn.GELU(),
+            nn.Linear(ns.hidden_sz, action_size),
+        )
+        self.critic_net = nn.Sequential(
+            nn.Linear(ns.hidden_sz * 2, ns.hidden_sz * 2),
+            nn.GELU(),
+            nn.Linear(ns.hidden_sz * 2, ns.hidden_sz),
+            nn.GELU(),
+            nn.Linear(ns.hidden_sz, 1),
+        )
+
+    def forward(self, state):
+        embedding = self.feature_embedding(state)
+        att_embedding = self.transformer(embedding)
+        worker_action = self.actor_net(torch.cat([embedding, att_embedding], dim=-1))
+        critic_value = self.critic_net(torch.cat([embedding, att_embedding], dim=-1))
+        return critic_value + worker_action - worker_action.mean()
+
 
 class LSTMTrans(nn.Module):
     """
