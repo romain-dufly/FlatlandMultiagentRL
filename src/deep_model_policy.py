@@ -90,8 +90,10 @@ class DeepPolicy(Policy):
                 action_values = self.model(state)
         self.model.train()
 
-        # Use a softmax policy
-        return [np.random.choice(np.arange(self.action_size), p=agent_values) for agent_values in action_values.cpu().data.numpy()[0]]
+        if random.random() > eps:
+            return [np.argmax(agent_values) for agent_values in action_values.cpu().data.numpy()[0]]
+        else:
+            return [random.choice(np.arange(self.action_size)) for _ in range(len(action_values.cpu().data.numpy()[0]))]
 
     def step(self, state, action, reward, next_state, done):
         assert not self.evaluation_mode, "Policy set to evaluation only."
@@ -135,11 +137,10 @@ class DeepPolicy(Policy):
         elif special == 'centralized':
             Q_best_action = self.model(next_states).max(2)[1]
             Q_targets_next = self.target(next_states).gather(2, Q_best_action.unsqueeze(-1)).squeeze(2)
-            dones = dones[:,:2]
+            dones = dones[:,:-1]
         else:
             Q_best_action = self.model(next_states).max(1)[1]
             Q_targets_next = self.target(next_states).gather(1, Q_best_action.unsqueeze(-1))
-        
         Q_targets = rewards + (self.gamma * Q_targets_next * (1 - dones))
 
         # Compute loss
