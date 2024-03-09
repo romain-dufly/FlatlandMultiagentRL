@@ -204,6 +204,7 @@ class Transformer(nn.Module):
         output = self.att_mlp(torch.cat([input, output], dim=-1))
         return output
 
+
 class LSTMQNetwork(nn.Module):
     def __init__(self):
         super(LSTMQNetwork, self).__init__()
@@ -224,7 +225,6 @@ class LSTMQNetwork(nn.Module):
             nn.Linear(ns.hidden_sz * 2, ns.hidden_sz),
             nn.GELU(),
             nn.Linear(ns.hidden_sz, fp.action_sz),
-            nn.Softmax(dim=-1),
         )
         self.critic_net = nn.Sequential(
             nn.Linear(ns.hidden_sz + ns.tree_embedding_sz, ns.hidden_sz * 2),
@@ -250,7 +250,8 @@ class LSTMQNetwork(nn.Module):
         worker_action = self.actor_net(embedding)
         critic_value = self.critic_net(embedding)
         critic_value = critic_value.mean(1).view(-1)
-        return critic_value + worker_action - worker_action.mean()
+        logits = critic_value + worker_action - worker_action.mean()
+        return F.softmax(logits, dim=-1)
 
     def modify_adjacency(self, adjacency, _device):
         batch_size, n_agents, num_edges, _ = adjacency.shape
@@ -267,7 +268,7 @@ class LSTMQNetwork(nn.Module):
 
 class DuelingTrans(nn.Module):
     def __init__(self, state_size, action_size=5):
-        super(DuelingTrans, self).__
+        super(DuelingTrans, self).__init__()
         self.feature_embedding = nn.Sequential(
             nn.Linear(state_size, 2 * ns.hidden_sz),
             nn.GELU(),
@@ -301,8 +302,9 @@ class DuelingTrans(nn.Module):
         att_embedding = self.transformer(embedding)
         worker_action = self.actor_net(torch.cat([embedding, att_embedding], dim=-1))
         critic_value = self.critic_net(torch.cat([embedding, att_embedding], dim=-1))
-        return critic_value + worker_action - worker_action.mean()
-
+        logits =  critic_value + worker_action - worker_action.mean()
+        # apply softmax to get the action probabilities
+        return F.softmax(logits, dim=-1)
 
 class LSTMTrans(nn.Module):
     """
@@ -361,7 +363,8 @@ class LSTMTrans(nn.Module):
         worker_action = torch.zeros((batch_size, n_agents, 5), device=device)
         worker_action[:, :n_agents, :] = self.actor(embedding, att_embedding)
         critic_value = self.critic(embedding, att_embedding)
-        return critic_value + worker_action - worker_action.mean()
+        logits = critic_value + worker_action - worker_action.mean()
+        return F.softmax(logits, dim=-1)
 
     def actor(self, embedding, att_embedding):
         worker_action = torch.cat([embedding, att_embedding], dim=-1)
