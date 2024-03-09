@@ -250,7 +250,7 @@ class LSTMQNetwork(nn.Module):
         worker_action = self.actor_net(embedding)
         critic_value = self.critic_net(embedding)
         critic_value = critic_value.mean(1).view(-1)
-        return critic_value + worker_action - worker_action.mean(1)
+        return critic_value + worker_action - worker_action.mean()
 
     def modify_adjacency(self, adjacency, _device):
         batch_size, n_agents, num_edges, _ = adjacency.shape
@@ -325,7 +325,7 @@ class LSTMTrans(nn.Module):
         worker_action = torch.zeros((batch_size, n_agents, 5), device=device)
         worker_action[:, :n_agents, :] = self.actor(embedding, att_embedding)
         critic_value = self.critic(embedding, att_embedding)
-        return [worker_action], critic_value  # (batch size, 1)
+        return critic_value + worker_action - worker_action.mean()
 
     def actor(self, embedding, att_embedding):
         worker_action = torch.cat([embedding, att_embedding], dim=-1)
