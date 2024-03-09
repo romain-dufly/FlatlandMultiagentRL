@@ -81,7 +81,17 @@ class DeepPolicy(Policy):
             return random.choice(np.arange(self.action_size))
         
     def act_centralized(self, state, eps=0.):
-        pass ########### TODO
+        self.model.eval()
+        with torch.no_grad():
+            if isinstance(state, tuple):
+                action_values = self.model(*state)
+            else:
+                state = torch.from_numpy(state).float().unsqueeze(0).to(self.device)
+                action_values = self.model(state)
+        self.model.train()
+
+        # Use a softmax policy
+        return [np.random.choice(np.arange(self.action_size), p=agent_values) for agent_values in action_values.cpu().data.numpy()[0]]
 
     def step(self, state, action, reward, next_state, done):
         assert not self.evaluation_mode, "Policy set to evaluation only."
@@ -93,34 +103,43 @@ class DeepPolicy(Policy):
         self.t_step = (self.t_step + 1) % self.update_every
         if self.t_step == 0:
             if len(self.memory) > self.batch_size:
-                # if state is a tuple, sample using optionnal parameter 'LSTM'
                 if isinstance(state, tuple):
                     experiences = self.memory.sample_lstm()
                     self.learn(experiences, 'LSTM')
+                elif len(state.shape) >= 2:
+                    experiences = self.memory.sample_centralized()
+                    self.learn(experiences, 'centralized')
                 else:
                     experiences = self.memory.sample()
                     self.learn(experiences)
 
-    def learn(self, experiences, lstm=None):
+    def learn(self, experiences, special=None):
         """Update model parameters using given batch of experience."""
         states, actions, rewards, next_states, dones = experiences
 
         # Get expected Q values from local model
-        if lstm:
+        if special == 'LSTM':
             # For each element in the list of states, get the Q values efficiently and stack them
             Q_expected = torch.stack([self.model(*s) for s in states], dim=0).squeeze(1).squeeze(1)
             Q_expected = Q_expected.gather(1, actions)
+        elif special == 'centralized':
+            Q_expected = self.model(states).gather(2, actions.unsqueeze(-1)).squeeze(2)
         else:
             Q_expected = self.model(states).gather(1, actions)
 
         # Compute Q targets for current states
-        if lstm:
+        if special == 'LSTM':
             Q_best_action = torch.stack([self.model(*s) for s in next_states], dim=0).squeeze(1).squeeze(1).max(1)[1]
             Q_targets_next = torch.stack([self.target(*s) for s in next_states], dim=0).squeeze(1).squeeze(1)
             Q_targets_next = Q_targets_next.gather(1, Q_best_action.unsqueeze(-1))
+        elif special == 'centralized':
+            Q_best_action = self.model(next_states).max(2)[1]
+            Q_targets_next = self.target(next_states).gather(2, Q_best_action.unsqueeze(-1)).squeeze(2)
+            dones = dones[:,:2]
         else:
             Q_best_action = self.model(next_states).max(1)[1]
             Q_targets_next = self.target(next_states).gather(1, Q_best_action.unsqueeze(-1))
+        
         Q_targets = rewards + (self.gamma * Q_targets_next * (1 - dones))
 
         # Compute loss
@@ -168,7 +187,7 @@ class ReplayBuffer:
 
     def add(self, state, action, reward, next_state, done):
         """Add a new experience to memory."""
-        if isinstance(state, tuple):
+        if isinstance(state, tuple) or len(state.shape) >= 2:
             e = Experience(state, action, reward, next_state, done)
         else:
             e = Experience(np.expand_dims(state, 0), action, reward, np.expand_dims(next_state, 0), done)
@@ -194,6 +213,7 @@ class ReplayBuffer:
     def sample_lstm(self):
         """Randomly sample a batch of experiences from memory when using LSTM."""
         experiences = random.sample(self.memory, k=self.batch_size)
+
         states = [e.state for e in experiences if e is not None]
         actions = torch.from_numpy(self.__v_stack_impr([e.action for e in experiences if e is not None])) \
             .long().to(self.device)
@@ -202,6 +222,18 @@ class ReplayBuffer:
         next_states = [e.next_state for e in experiences if e is not None]
         dones = torch.from_numpy(self.__v_stack_impr([e.done for e in experiences if e is not None]).astype(np.uint8)) \
             .float().to(self.device)
+
+        return states, actions, rewards, next_states, dones
+    
+    def sample_centralized(self):
+        """Randomly sample a batch of experiences from memory when using a centralized critic."""
+        experiences = random.sample(self.memory, k=self.batch_size)
+
+        states = torch.from_numpy(np.array([e.state for e in experiences if e is not None])).float().to(self.device)
+        actions = torch.from_numpy(np.vstack([[v for v in e.action.values()] for e in experiences if e is not None])).long().to(self.device)
+        rewards = torch.from_numpy(np.vstack([[v for v in e.reward.values()] for e in experiences if e is not None])).float().to(self.device)
+        next_states = torch.from_numpy(np.array([e.next_state for e in experiences if e is not None])).float().to(self.device)
+        dones = torch.from_numpy(np.vstack([[v for v in e.done.values()] for e in experiences if e is not None])).float().to(self.device)
 
         return states, actions, rewards, next_states, dones
 

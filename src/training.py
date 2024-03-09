@@ -101,11 +101,25 @@ def train_agent(env, policy, train_params, obs_params, checkpoints_folder='check
                     agent_obs[agent] = normalize_observation(obs[agent], observation_tree_depth, observation_radius=observation_radius)
                 agent_prev_obs[agent] = copy.deepcopy(agent_obs[agent])
 
+        if centralized:
+            # Combine all agent observations along a new axis
+            full_obs = np.vstack(agent_obs)
+
         # Run episode
         for _ in range(max_steps):
-            # Get all actions
+
             if centralized:
-                pass
+                all_actions = policy.act_centralized(full_obs, eps=eps_start)
+                for agent in train_env.get_agent_handles():
+                    if info['action_required'][agent]:
+                        update_values[agent] = True
+                        action = all_actions[agent]
+                        action_count[action] += 1
+                        actions_taken.append(action)
+                    else:
+                        update_values[agent] = False
+                        action = 0
+                    action_dict.update({agent: action})
             else:
                 for agent in train_env.get_agent_handles():
                     if info['action_required'][agent]:
@@ -133,21 +147,40 @@ def train_agent(env, policy, train_params, obs_params, checkpoints_folder='check
                     show_predictions=False
                 )
 
-            # Update replay buffer and train agent
-            for agent in train_env.get_agent_handles():
-                if update_values[agent] or done['__all__']:
-                    # Only learn from timesteps where somethings happened
-                    policy.step(agent_prev_obs[agent], agent_prev_action[agent], all_rewards[agent], agent_obs[agent], done[agent])
-                    agent_prev_obs[agent] = copy.deepcopy(agent_obs[agent])
-                    agent_prev_action[agent] = action_dict[agent]
-                score += all_rewards[agent]
+            if centralized:
+                full_obs = np.vstack(agent_obs)
+                prev_full_obs = np.vstack(agent_prev_obs)
 
-                # Preprocess the new observations
-                if next_obs[agent]:
-                    if LSTM:
-                        agent_obs[agent] = get_features([individual_from_obs_list(obs_list[0], agent)])
-                    else:
-                        agent_obs[agent] = normalize_observation(next_obs[agent], observation_tree_depth, observation_radius=observation_radius)
+            # Update replay buffer and train agent
+            if centralized:
+                # check if one of the agents has update_values
+                if any(update_values) or done['__all__']:
+                    policy.step(prev_full_obs, agent_prev_action, all_rewards, full_obs, done)
+                agent_prev_obs = copy.deepcopy(agent_obs)
+                agent_prev_action = action_dict
+                for agent in train_env.get_agent_handles():
+                    if next_obs[agent]:
+                        if LSTM:
+                            agent_obs[agent] = get_features([individual_from_obs_list(obs_list[0], agent)])
+                        else:
+                            agent_obs[agent] = normalize_observation(next_obs[agent], observation_tree_depth, observation_radius=observation_radius)
+                full_obs = np.vstack(agent_obs)
+                score += sum(all_rewards.values()) ## To get a score during training logs
+            else:
+                for agent in train_env.get_agent_handles():
+                    if update_values[agent] or done['__all__']:
+                        # Only learn from timesteps where somethings happened
+                        policy.step(agent_prev_obs[agent], agent_prev_action[agent], all_rewards[agent], agent_obs[agent], done[agent])
+                        agent_prev_obs[agent] = copy.deepcopy(agent_obs[agent])
+                        agent_prev_action[agent] = action_dict[agent]
+                    score += all_rewards[agent]
+
+                    # Preprocess the new observations
+                    if next_obs[agent]:
+                        if LSTM:
+                            agent_obs[agent] = get_features([individual_from_obs_list(obs_list[0], agent)])
+                        else:
+                            agent_obs[agent] = normalize_observation(next_obs[agent], observation_tree_depth, observation_radius=observation_radius)
 
             if done['__all__']:
                 break
@@ -233,6 +266,10 @@ def eval_policy(env, policy, train_params, obs_params):
         LSTM = train_params['LSTM']
     else:
         LSTM = None
+    if train_params.get('centralized'):
+        centralized = train_params['centralized']
+    else:
+        centralized = None
 
     scores = []
     completions = []
@@ -261,9 +298,17 @@ def eval_policy(env, policy, train_params, obs_params):
                     else:
                         agent_obs[agent] = normalize_observation(obs[agent], tree_depth=tree_depth, observation_radius=observation_radius)
 
+            if centralized:
+                full_obs = np.vstack(agent_obs)
+                all_actions = policy.act_centralized(full_obs, eps=0.0)
+                
+            for agent in env.get_agent_handles():
                 action = 0
                 if info['action_required'][agent]:
-                    action = policy.act(agent_obs[agent], eps=0.0)
+                    if centralized:
+                        action = all_actions[agent]
+                    else:
+                        action = policy.act(agent_obs[agent], eps=0.0)
                 action_dict.update({agent: action})
 
             obs, all_rewards, done, info = env.step(action_dict)
