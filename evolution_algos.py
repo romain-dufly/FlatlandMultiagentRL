@@ -49,9 +49,10 @@ def cem_uncorrelated(objective_function,
         hist_dict[it] = [average_reward] + [mu for mu in mean_array] + [var for var in np.diag(var_array)]
 
         if it%print_every == 0:
-            print([sample[1] for sample in eval_samples])
+            print("sorted samples : ", [sample[1] for sample in eval_samples])
             print(average_reward)
         if average_reward < success_score:
+           print("Success! Algorithm converged in ", it, " iterations")
            break
         mean_array = np.mean(elite, axis=0)
         var_array = np.cov(elite, rowvar=False)
