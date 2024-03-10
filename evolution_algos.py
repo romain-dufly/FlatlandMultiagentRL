@@ -2,6 +2,8 @@ import numpy as np
 import math
 from observation_utils import normalize_observation
 
+from test_utils import RenderWrapper
+
 
 def cem_uncorrelated(objective_function,
                      mean_array,
@@ -33,7 +35,7 @@ def cem_uncorrelated(objective_function,
     
     for it in range(max_iterations):
 
-        print("iteration : ", it)
+        
 
         samples = np.random.multivariate_normal(mean = mean_array, cov = var_array, size = sample_size)
         eval_samples = []
@@ -49,6 +51,7 @@ def cem_uncorrelated(objective_function,
         hist_dict[it] = [average_reward] + [mu for mu in mean_array] + [var for var in np.diag(var_array)]
 
         if it%print_every == 0:
+            print("iteration : ", it)
             print("sorted samples : ", [sample[1] for sample in eval_samples])
             print(average_reward)
         if average_reward < success_score:
@@ -79,8 +82,8 @@ def saes_1_1(objective_function,
         if f_x < success_score:
             break
 
-        sigma_array_prim = np.copy(sigma_array) * np.exp(tau*np.random.normal())
-        x_array_prim = np.copy(x_array) + np.copy(sigma_array_prim) * np.random.normal()
+        sigma_array_prim = sigma_array * np.exp(tau*np.random.normal())
+        x_array_prim = x_array + sigma_array_prim * np.random.normal()
         f_x_prim = objective_function(x_array_prim)
         if f_x_prim <= f_x:
             x_array = np.copy(x_array_prim)
@@ -111,7 +114,8 @@ class ObjectiveFunction:
         """Evaluate a policy"""
 
         #print("Evaluation function called")
-
+        if render:
+            render_wrapper = RenderWrapper(self.env, real_time_render=True, force_gif=False)
         self.num_evals += 1
 
         if num_episodes is None:
@@ -129,7 +133,7 @@ class ObjectiveFunction:
 
             for t in range(max_time_steps):
                 if render:
-                    self.env.render_wrapper.render()
+                    render_wrapper.render()
                 
                 agent_obs = [None] * self.env.get_num_agents()
                 for agent in self.env.get_agent_handles():
