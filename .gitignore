@@ -154,7 +154,6 @@ models/
 
 log.txt
 log*
-test*
 
 !test*.py
 # render test
@@ -162,6 +161,8 @@ test*
 *.jpg
 *.mp4
 *.pkl
+*.gif
+*.pth
 
 # code test
 *.rdb
