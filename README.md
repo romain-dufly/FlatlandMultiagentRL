@@ -3,12 +3,6 @@ Multi-agent reinforcement learning solution to [Flatland3 challenge](https://www
 
 # Install Dependencies
 
-### Clone the repository.
-```shell
-$ git clone http://gitlab.parametrix.cn/parametrix/challenge/flatland-marl.git
-$ cd flatland-marl
-```
-
 Needs Python version between 3.7 and 3.? (tested and sure to work on 3.9)
 If you are using conda, you can create a new environment with the following command (optional) :
 ```shell
