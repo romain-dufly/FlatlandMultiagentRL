@@ -7,7 +7,7 @@ import PIL
 import imageio
 from IPython.display import Image, clear_output
 
-from observation_utils import *
+from src.observation_utils import *
 
 # Adapted for the labs code and code from flatland documentation
 class RenderWrapper:
