@@ -166,3 +166,5 @@ log*
 
 # code test
 *.rdb
+
+solution/
