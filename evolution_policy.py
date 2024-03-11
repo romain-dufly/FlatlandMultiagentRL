@@ -19,7 +19,7 @@ def relu(x):
 
 class NeuralNetworkPolicy(Policy):
 
-    def __init__(self, state_size, action_size, h_size, evaluation_mode=False):   # h_size = number of neurons on the hidden layer
+    def __init__(self, state_size, action_size, h_size = 32, evaluation_mode=False):   # h_size = number of neurons on the hidden layer
         # Set the neural network activation functions (one function per layer)
         self.activation_functions = (relu, tanh)
 
@@ -37,9 +37,12 @@ class NeuralNetworkPolicy(Policy):
     def act(self, state, theta):
         weights = unflatten_weights(theta, self.shape_list)
 
-        return feed_forward(inputs=state,
+        x = feed_forward(inputs=state,
                             weights=weights,
                             activation_functions=self.activation_functions)
+        x = softmax(x)
+        action = np.random.choice(range(len(x)), p=x.ravel())
+        return action
     
     def step(self, state, action, reward, next_state, done):
         pass

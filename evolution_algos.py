@@ -73,24 +73,63 @@ def saes_1_1(objective_function,
              success_score=float("inf"),
              num_evals_for_stop=None,
              hist_dict=None):
+
     if tau is None:
-        tau = 0
-    for it in range(max_iterations):
-        f_x = objective_function(x_array)
-        if it%print_every == 0:
-            print(f_x)
-        if f_x < success_score:
-            break
+        tau = 1. / math.sqrt(x_array.size)
 
-        sigma_array_prim = sigma_array * np.exp(tau*np.random.normal())
-        x_array_prim = x_array + sigma_array_prim * np.random.normal()
-        f_x_prim = objective_function(x_array_prim)
-        if f_x_prim <= f_x:
-            x_array = np.copy(x_array_prim)
-            sigma_array  = np.copy(sigma_array_prim)
-        hist_dict[it] = [f_x] + [mu for mu in x_array] + [var for var in sigma_array]
+    if hist_dict is not None:
+        hist_dict['score'] = []
+        hist_dict['mu1'] = []
+        hist_dict['mu2'] = []
+        hist_dict['mu3'] = []
+        hist_dict['mu4'] = []
+        hist_dict['sigma1'] = []
+        hist_dict['sigma2'] = []
+        hist_dict['sigma3'] = []
+        hist_dict['sigma4'] = []
 
+    for iteration in range(max_iterations):
+            
+            # Sample parameter vectors
+            population = np.random.multivariate_normal(x_array, np.diag(sigma_array), 1)
 
+            # Update the variance and mean of the population
+            sigma_array_bis = sigma_array * np.exp(tau * np.random.normal(size=sigma_array.shape[0]))
+            x_array_bis = x_array + sigma_array_bis * np.random.normal(size=x_array.shape[0])
+
+            # Sample parameter vectors
+            population_bis = np.random.multivariate_normal(x_array_bis, np.diag(sigma_array_bis), 1)
+    
+            # Evaluate the mean of the population
+            score = objective_function(population[0])
+            score_bis = objective_function(population_bis[0])
+
+            # Update the mean and variance
+            if score_bis < score:
+                x_array = x_array_bis
+                sigma_array = sigma_array_bis
+    
+            if hist_dict is not None:
+                hist_dict['score'].append(score)
+                hist_dict['mu1'].append(x_array[0])
+                hist_dict['mu2'].append(x_array[1])
+                hist_dict['mu3'].append(x_array[2])
+                hist_dict['mu4'].append(x_array[3])
+                hist_dict['sigma1'].append(sigma_array[0])
+                hist_dict['sigma2'].append(sigma_array[1])
+                hist_dict['sigma3'].append(sigma_array[2])
+                hist_dict['sigma4'].append(sigma_array[3])
+    
+            if iteration % print_every == 0:
+                print("Iteration {0}/{1}: Score = {2}".format(iteration, max_iterations, score))
+    
+            if score <= success_score:
+                print(f"Success after {iteration} iterations!")
+                break
+    
+            if num_evals_for_stop is not None and objective_function.num_evals >= num_evals_for_stop:
+                print(f"Stop after {objective_function.num_evals} evaluations")
+                break
 
     return x_array
 
