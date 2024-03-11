@@ -1,8 +1,8 @@
 import numpy as np
 import math
-from observation_utils import normalize_observation
+from src.observation_utils import normalize_observation
 
-from test_utils import RenderWrapper
+from src.test_utils import RenderWrapper
 
 
 def cem_uncorrelated(objective_function,

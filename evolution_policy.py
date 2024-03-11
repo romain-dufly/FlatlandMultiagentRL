@@ -1,7 +1,7 @@
 import numpy as np
 import math
 import itertools
-from base_policy import Policy
+from src.deep_model_policy import Policy
 
 # Activation functions ########################################################
 
