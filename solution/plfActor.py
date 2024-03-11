@@ -50,25 +50,20 @@ class Actor:
         agents_attr = torch.unsqueeze(torch.from_numpy(agents_attr), axis=0).to(
             dtype=torch.float32
         )
-
         forest = obs_list[0]["forest"]
         forest = torch.unsqueeze(torch.from_numpy(forest), axis=0).to(
             dtype=torch.float32
         )
-
         adjacency = obs_list[0]["adjacency"]
         adjacency = torch.unsqueeze(torch.from_numpy(adjacency), axis=0).to(
             dtype=torch.int64
         )
-
         node_order = obs_list[0]["node_order"]
         node_order = torch.unsqueeze(torch.from_numpy(node_order), axis=0).to(
             dtype=torch.int64
         )
-
         edge_order = obs_list[0]["edge_order"]
         edge_order = torch.unsqueeze(torch.from_numpy(edge_order), axis=0).to(
             dtype=torch.int64
         )
-
         return agents_attr, forest, adjacency, node_order, edge_order

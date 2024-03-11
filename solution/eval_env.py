@@ -107,7 +107,7 @@ class LocalTestEnvWrapper(TestEnvWrapper):
 
     def step(self, actions):
         actions = self.parse_actions(actions)
-        feature, reward, done, info = self.env.step(actions)
+        feature, reward, done, _ = self.env.step(actions)
         self.update_obs_properties()
         stdobs = (feature, self.obs_properties)
         obs_list = [self.parse_features(*stdobs)]
