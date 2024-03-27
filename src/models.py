@@ -5,8 +5,19 @@ import torch.nn.functional as F
 from impl_config import FeatureParserConfig as fp
 from impl_config import NetworkConfig as ns
 
+'''
+Models implemented:
+    TreeLSTM: TreeLSTM module
+    Transformer: Transformer module
+
+    DuelingQNetwork: Dueling Q-network with MLP layers
+    LSTMQNetwork: LSTM on the observation + Dueling Q-network
+    DuelingTrans: Transformer module for centralized control + Dueling Q-network
+    LSTMTrans: LSTM + Transformer + Dueling Q-network
+'''
+
 class DuelingQNetwork(nn.Module):
-    """Dueling Q-network (https://arxiv.org/abs/1511.06581)"""
+    """Dueling Q-network with MLP layers"""
 
     def __init__(self, state_size, action_size, hidsize1=128, hidsize2=128):
         super(DuelingQNetwork, self).__init__()
@@ -204,18 +215,18 @@ class Transformer(nn.Module):
         output = self.att_mlp(torch.cat([input, output], dim=-1))
         return output
 
-
 class LSTMQNetwork(nn.Module):
+    """LSTM"""
     def __init__(self):
         super(LSTMQNetwork, self).__init__()
         self.tree_lstm = TreeLSTM(fp.node_sz, ns.tree_embedding_sz)
         self.attr_embedding = nn.Sequential(
             nn.Linear(fp.agent_attr, 2 * ns.hidden_sz),
             nn.GELU(),
-            nn.Linear(2 * ns.hidden_sz, 2 * ns.hidden_sz),
-            nn.GELU(),
-            nn.Linear(2 * ns.hidden_sz, 2 * ns.hidden_sz),
-            nn.GELU(),
+            #nn.Linear(2 * ns.hidden_sz, 2 * ns.hidden_sz),
+            #nn.GELU(),
+            #nn.Linear(2 * ns.hidden_sz, 2 * ns.hidden_sz),
+            #nn.GELU(),
             nn.Linear(2 * ns.hidden_sz, ns.hidden_sz),
             nn.GELU(),
         )
@@ -267,6 +278,7 @@ class LSTMQNetwork(nn.Module):
         return adjacency
 
 class DuelingTrans(nn.Module):
+    """Transformer"""
     def __init__(self, state_size, action_size=5):
         super(DuelingTrans, self).__init__()
         self.feature_embedding = nn.Sequential(
@@ -307,10 +319,7 @@ class DuelingTrans(nn.Module):
         return F.softmax(logits, dim=-1)
 
 class LSTMTrans(nn.Module):
-    """
-    Feature:  cat(agents_attr_embedding, tree_embedding)
-    structure: mlp
-    """
+    """LSTM + Transformer"""
     def __init__(self):
         super(LSTMTrans, self).__init__()
         self.tree_lstm = TreeLSTM(fp.node_sz, ns.tree_embedding_sz)

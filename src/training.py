@@ -31,7 +31,9 @@ def train_agent(env, policy, train_params, obs_params, checkpoints_folder='src/c
     
     if log:
         logged_scores = []
+        logged_scores_s = []
         logged_completions = []
+        logged_completions_s = []
 
     # Setup the environments
     _,_ = env.reset()
@@ -246,15 +248,17 @@ def train_agent(env, policy, train_params, obs_params, checkpoints_folder='src/c
         
             # Save to array the smoothed values
         if log:
-            logged_scores.append(smoothed_normalized_score)
-            logged_completions.append(smoothed_completion)
+            logged_scores.append(normalized_score)
+            logged_scores_s.append(smoothed_normalized_score)
+            logged_completions.append(completion)
+            logged_completions_s.append(smoothed_completion)
 
         # Evaluate policy and log results at some interval
         if (episode_idx % checkpoint_interval == 0 and n_eval_episodes > 0) or episode_idx == n_episodes - 1:
             scores, completions, nb_steps_eval = eval_policy(eval_env, policy, train_params, obs_params)
             print("\t🔍 Evaluation score: {:.3f} done: {:.1f}%".format(np.mean(scores), np.mean(completions) * 100.0))
     if log:
-        return logged_scores, logged_completions
+        return logged_scores, logged_scores_s, logged_completions, logged_completions_s
 
 
 def format_action_prob(action_probs):

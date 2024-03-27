@@ -18,7 +18,7 @@ The repository is structured as follows:
 
     - `rewards.py`: Custom rewards for the Flatland environment.
 
-    - `observation_utils.py`: Utility functions for processing observations.
+    - `observation_utils.py`: Utility functions for processing observations, in part taken from the Flatland starter kit.
     - `test_utils.py`: Utility functions for running tests and rendering policies.
 
 Then, various notebooks are provided to demonstrate the training and evaluation of the policies. The notebooks are as follows:

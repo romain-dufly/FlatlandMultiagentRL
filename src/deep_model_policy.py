@@ -77,7 +77,8 @@ class DeepPolicy(Policy):
 
         # Use an epsilon-greedy policy
         if random.random() > eps:
-            return np.argmax(action_values.cpu().data.numpy())
+            # use softmax to choose an action
+            return random.choices(range(self.action_size), weights=F.softmax(action_values, dim=1).cpu().data.numpy()[0])[0]
         else:
             return random.choice(np.arange(self.action_size))
         
