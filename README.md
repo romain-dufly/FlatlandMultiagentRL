@@ -1,46 +1,29 @@
 # Flatland-MARL
-Multi-agent reinforcement learning solution to [Flatland3 challenge](https://www.aicrowd.com/challenges/flatland-3).
 
-# Install Dependencies
+This repository expands on various multi-agent reinforcement learning (MARL) algorithms and applies them to the Flatland environment. The Flatland environment is a grid-world environment where agents must navigate to their respective target stations while avoiding collisions with other agents. The environment is based on the [Flatland challenge](https://www.aicrowd.com/challenges/flatland-challenge) hosted on AIcrowd.
 
-Needs Python version between 3.7 and 3.? (tested and sure to work on 3.9)
-If you are using conda, you can create a new environment with the following command (optional) :
-```shell
-$ conda create -n flatland-marl python=3.9
-$ conda activate flatland-marl 
-```
+The repository is structured as follows:
 
-### Install flatland
-```shell
-$ cd flatland-rl
-$ pip install .
-$ cd ..
-```
+- `flatland_rl/`: The Flatland environment, with a starter kit for training agents, taken from the AIcrowd Flatland challenge repository.
 
-### Install other requirements
-```shell
-$ pip install -r requirements.txt
-```
+- `flatland_cutils/`: C++ for a BFS tree observation builder, taken from ```Multi-Agent Path Finding via Tree LSTM, 2022```
 
-### Install torch with CUDA capabilities (for training on A5000 GPUs)
-```shell
-$ pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-```
+- `src/`: Contains utility code as well as implementations of various policies and training algorithms:
+    - `models.py`: The neural network architectures used in the policies.
+    - `deep_model_policy.py`: Wrapper for neural networks into DDQN policies.
+    - `training.py`: Training loop and evaluation for the DDQN policies.
+    - `impl_config.py`: Configuration for some networks.
 
-### Build flatland_cutils
-**NOTE** : this is the potentially difficult part of the installation (still works in the computer room, though). May be skipped if you don't want to use the feature parser from `flatland_cutils`. The normal parser from `flatland` can be used instead, using TreeObsForRailEnv and the function normalize_observation (to get features from the observation).
+    - `evolution_algos.py`, `evolution_policy.py`: Implementation of the evolution algorithm for training policies.
 
-IF YOU DID NOT INSTALL CUTILS: comment out the imports and ignore the related cells in the notebook DQN_policies_notebook.ipynb.
+    - `rewards.py`: Custom rewards for the Flatland environment.
 
-```shell
-$ cd flatland_cutils
-$ pip install .
-$ cd ..
-```
+    - `observation_utils.py`: Utility functions for processing observations.
+    - `test_utils.py`: Utility functions for running tests and rendering policies.
 
-### For WSL2 users only (Not usually necessary)
-The game rendering relies on `OpenGL`. If you are wsl2 user, it is very likely that you don't have OpenGL installed. Please install it.
-```shell
-$ sudo apt-get update
-$ sudo apt-get install freeglut3-dev
-```
+Then, various notebooks are provided to demonstrate the training and evaluation of the policies. The notebooks are as follows:
+
+- `DQN_policies_notebook.ipynb`: Demonstrates training a policy using the DDQN algorithm, with neural networks of varying complexity.
+- `gnn_notebook.ipynb`: Demonstrates training a policy using a Graph Neural Network (GNN) architecture.
+- `rewards_notebook.ipynb`: Demonstrates training a policy using various custom rewards.
+- `ES_logreg.ipynb`: Demonstrates CEM and SAES with a logistic regression policy.
