@@ -12,8 +12,14 @@ scores_trans : 2 agents, Transformer
 
 WHAT TO PLOT :
 
-trajectories are stochastic (scores_dense5 and scores_dense5_2)
+trajectories are stochastic (scores_dense5 and scores_dense5_2) OK
 compare dense and sparse as well as 2 and 5 agents OK
 compare DDQN with LSTM and Transformer (2 agents, sparse reward) OK
+some improvements happen way down the line (none2) : ...
 
 compare best results for all deep policies + baseline policy
+
+
+Remarks : the network saturates and gets stuck in a single output
+When changing hyperparameters, it does not get stuck but it stagnates and is unable to learn further.
+Unclear whether it is still a hyperparameter problem or a network problem.
