@@ -1,0 +1,19 @@
+
+scores_none2 : 2 agents, DQN
+scores_none5 : 5 agents, DQN
+
+scores_dense2 : 2 agents, DQN + dense reward
+scores_dense5 : 5 agents, DQN + dense reward, 1200 episodes
+scores_dense5_2 : '', 5000 episodes
+
+scores_lstm : 2 agents, LSTM
+scores_trans : 2 agents, Transformer
+
+
+WHAT TO PLOT :
+
+trajectories are stochastic (scores_dense5 and scores_dense5_2)
+compare dense and sparse as well as 2 and 5 agents OK
+compare DDQN with LSTM and Transformer (2 agents, sparse reward) OK
+
+compare best results for all deep policies + baseline policy

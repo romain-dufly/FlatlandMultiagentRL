@@ -262,7 +262,7 @@ class LSTMQNetwork(nn.Module):
         critic_value = self.critic_net(embedding)
         critic_value = critic_value.mean(1).view(-1)
         logits = critic_value + worker_action - worker_action.mean()
-        return F.softmax(logits, dim=-1)
+        return logits
 
     def modify_adjacency(self, adjacency, _device):
         batch_size, n_agents, num_edges, _ = adjacency.shape
@@ -284,8 +284,8 @@ class DuelingTrans(nn.Module):
         self.feature_embedding = nn.Sequential(
             nn.Linear(state_size, 2 * ns.hidden_sz),
             nn.GELU(),
-            nn.Linear(2 * ns.hidden_sz, 2 * ns.hidden_sz),
-            nn.GELU(),
+            #nn.Linear(2 * ns.hidden_sz, 2 * ns.hidden_sz),
+            #nn.GELU(),
             nn.Linear(2 * ns.hidden_sz, ns.hidden_sz),
             nn.GELU(),
         )
@@ -295,15 +295,15 @@ class DuelingTrans(nn.Module):
             Transformer(ns.hidden_sz, 4),
         )
         self.actor_net = nn.Sequential(
-            nn.Linear(ns.hidden_sz * 2, ns.hidden_sz * 2),
-            nn.GELU(),
+            #nn.Linear(ns.hidden_sz * 2, ns.hidden_sz * 2),
+            #nn.GELU(),
             nn.Linear(ns.hidden_sz * 2, ns.hidden_sz),
             nn.GELU(),
             nn.Linear(ns.hidden_sz, action_size),
         )
         self.critic_net = nn.Sequential(
-            nn.Linear(ns.hidden_sz * 2, ns.hidden_sz * 2),
-            nn.GELU(),
+            #nn.Linear(ns.hidden_sz * 2, ns.hidden_sz * 2),
+            #nn.GELU(),
             nn.Linear(ns.hidden_sz * 2, ns.hidden_sz),
             nn.GELU(),
             nn.Linear(ns.hidden_sz, 1),

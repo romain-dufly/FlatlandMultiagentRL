@@ -231,7 +231,7 @@ class RailEnvDense(RailEnv) :
 
     
 
-def get_testing_environements(
+def get_testing_environments(
     width=20,
     height=15,
     rail_generator=SparseRailGen(

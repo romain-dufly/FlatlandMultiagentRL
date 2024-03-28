@@ -160,7 +160,6 @@ log*
 *.bmp
 *.jpg
 *.mp4
-*.pkl
 *.gif
 *.pth
 

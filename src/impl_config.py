@@ -15,7 +15,7 @@ class FeatureParserConfig:
 
     node_sz: int = 12
     num_tree_obs_nodes: int = 1 + 3 * 10
-    tree_pred_path_depth: int = 300 ## decreased from 500
+    tree_pred_path_depth: int = 300 ## from
 
     agent_attr: int = 83
 
