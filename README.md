@@ -1,4 +1,4 @@
-# Flatland-MARL
+## Flatland | Multi-Agent Reinforcement Learning
 
 This repository expands on various multi-agent reinforcement learning (MARL) algorithms and applies them to the Flatland environment. The Flatland environment is a grid-world environment where agents must navigate to their respective target stations while avoiding collisions with other agents. The environment is based on the [Flatland challenge](https://www.aicrowd.com/challenges/flatland-challenge) hosted on AIcrowd.
 
